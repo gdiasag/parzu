@@ -49,7 +49,7 @@ if '__file__' in globals():
 
 # get swi-prolog version
 if prolog == 'swipl':
-    swipl_version, _ = Popen(['swipl', '--version'], stdout=PIPE, text=True).communicate()
+    swipl_version, _ = Popen(['swipl', '--version'], stdout=PIPE, universal_newlines=True).communicate()
     swipl_version = swipl_version.split()
     try:
         swipl_version = list(map(int,swipl_version[swipl_version.index('version')+1].split('.')))
