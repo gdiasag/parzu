@@ -7,7 +7,7 @@ from __future__ import division
 import sys
 from math import log, exp
 
-# identify the start of a new "real" sentence (i.e. a new block of n alternatives)
+# Identify the start of a new "real" sentence
 def identify_newsent(line,outputformat):
 
     if outputformat == 'prolog' and "'#0'" in line and line.split(',',2)[1].strip()=='1':
@@ -78,17 +78,15 @@ def feature_extract(sentbuf,outputformat):
 
 
 def process_input(outputformat):
-    
     features = {}
     sentlist = []
     sentbuf = []
     i = 1
     for line in sys.stdin:
-    
-        # empty line: sentence delimiter
+        # Empty line: sentence delimiter
         if line == '\n':
             if sentbuf:
-                features[len(sentlist)] = feature_extract(sentbuf,outputformat)
+                features[len(sentlist)] = feature_extract(sentbuf, outputformat)
                 sentlist.append(sentbuf)
             sentbuf = []
             continue

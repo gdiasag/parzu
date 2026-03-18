@@ -1,8 +1,10 @@
+.env
+
+models/
+statistics/tmp*
+
 *.qlf
 *.tar.gz
 *.pyc
-statistics/tmp*
-tmp/
 *.svg
-external
-config.ini
+config.ini.example

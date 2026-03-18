@@ -187,7 +187,8 @@ def process_arguments(commandline=True):
     options['returnsentdelim'] = 'no'
 
     if options['tempdir'] == 'local':
-        options['tempdir'] = os.path.join(root_directory,'tmp')
+        os.makedirs(os.path.join(root_directory, 'tmp'), exist_ok=True)
+        options['tempdir'] = os.path.join(root_directory, 'tmp')
 
 
     if options['uniquetmp'] == '1':

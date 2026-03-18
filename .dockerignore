@@ -1,0 +1,16 @@
+*
+
+!/core
+!/evaluation
+!/postprocessor/**/*
+!/preprocessor/**/*
+!/statistics/**/*
+!/models/*
+
+!/parzu*
+
+# Include requirements file
+!/requirements.txt
+
+# Include config file
+!/config.ini
