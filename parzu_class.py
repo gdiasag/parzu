@@ -7,9 +7,7 @@ from __future__ import unicode_literals
 
 import sys
 import os
-import getopt
 import shlex
-import pipes
 import pexpect
 import tempfile
 import threading
@@ -31,96 +29,34 @@ import morphisto2prolog
 sys.path.append(os.path.join(root_directory, 'postprocessor'))
 import cleanup_output
 
-from parzu import outputformats, morphology_mapping
+#list of output formats created by postprocessing_module.pl.
+#if you create a new one, put it here.
+outputformats = ["oldconll","conll","moses","prolog"]
+
+
+#if you want to use yap (version >= 6.2), change this to 'yap'
+prolog = 'swipl'
+#prolog = 'yap'
+
+#yap and swipl have different command line arguments: this maps to the correct one
+prolog_load = {'yap':'-l',
+         'swipl':'-s',
+         'pl':'-s'}
+
+#smor and 'keep' morphology options are internally treated as Gertwol morphology.
+morphology_mapping = {'gertwol':'gertwol',
+                        'smor':'gertwol',
+                        'none':'off',
+                        'keep':'gertwol',
+                        'tueba':'tueba'}
 
 ########################
 #Command line argument parser
-
-def usage():
-    bold = "\033[1m"
-    reset = "\033[0;0m"
-    sys.stderr.write(bold + '\nParZu options\n' + reset + '\n')
-    sys.stderr.write('\t' + bold + '-h' + reset + ', ' + bold + '--help' + reset + '\n')
-    sys.stderr.write('\t\tprint usage information\n\n')
-    sys.stderr.write('\t' + bold + '-i' + reset + ', ' + bold + '--input' + reset + ' type\n')
-    sys.stderr.write('\t\tdefine input type. Supported so far:\n')
-    sys.stderr.write('\t\t' + bold +'plain' + reset + ': plain text\n')
-    sys.stderr.write('\t\t' + bold +'preprocessed' + reset + ': parser-ready input (generated with output option "preprocessed")\n')
-    sys.stderr.write('\t\t' + bold +'tokenized' + reset + ': tokenized text. one token per line, empty line for sentence boundary\n')
-    sys.stderr.write('\t\t' + bold +'tokenized_lines' + reset + ': tokenized text. one sentence per line, tokens separated by whitespace\n')
-    sys.stderr.write('\t\t' + bold +'tagged' + reset + ': POS-tagged text. token [tab] tag [newline]\n\n')
-    sys.stderr.write('\t' + bold + '-l' + reset + ', ' + bold + '--linewise' + reset + '\n')
-    sys.stderr.write('\t\tparse text line by line (suppress automatic sentence splitting).\n\n')
-    sys.stderr.write('\t' + bold + '-o' + reset + ', ' + bold + '--output' + reset + ' type\n')
-    sys.stderr.write('\t\tdefine output type. Supported so far:\n')
-    sys.stderr.write('\t\t' + bold +'conll' + reset + ': CoNLL 2007 data format\n')
-    sys.stderr.write('\t\t' + bold + 'graphical' + reset + ': generate one SVG image per sentence in your current directory, using DepSVG.\n')
-    sys.stderr.write('\t\t' + bold +'moses' + reset + ': factored format used by Moses SMT system\n')
-    sys.stderr.write('\t\t' + bold +'preprocessed' + reset + ': return preprocessed input (unparsed, but parser-ready)\n')
-    sys.stderr.write('\t\t' + bold +'prolog' + reset + ': prolog-readable format\n')
-    sys.stderr.write('\t\t' + bold +'raw' + reset + ': parser output without postprocessing (mostly for debugging)\n\n')
-    sys.stderr.write('\t' + bold + '-v'  + reset + ', ' + bold + '--verbose' + reset + '\n')
-    sys.stderr.write('\t\tsend warnings and errors to stderr\n')
-    sys.stderr.write('\t' + bold + '--projective' + reset + '\n')
-    sys.stderr.write('\t\talso print projective output. Uses the last two columns of the CoNLL dependency format (or two extra arguments in the Prolog format).\n')
-    sys.stderr.write('\t' + bold + '--secedges' + reset + '\n')
-    sys.stderr.write('\t\talso print secondary edges. Uses the last two columns of the CoNLL dependency format (or two extra arguments in the Prolog format).\n\n')
-
-def load_arguments():
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "hi:lo:p:vq", ["help", "input=", "linewise", "output=", "verbose", "secedges", "projective", "quiet"])
-    except getopt.GetoptError as err:
-        # print help information and exit:
-        sys.stderr.write(err) # will print something like "option -a not recognized"
-        usage()
-        sys.exit(2)
-    output = None
-    inputformat = None
-    linewise = False
-    verbose = False
-    extrainfo = 'no'
-    for o, a in opts:
-        if o in ("-h", "--help"):
-            usage()
-            sys.exit()
-        elif o in ("-o", "--output"):
-            output = a
-        elif o in ("-i", "--input"):
-            inputformat = a
-        elif o in ("-l", "--linewise"):
-            linewise = True
-        elif o in ("--secedges",):
-            if extrainfo == 'projective':
-                sys.stderr.write('Error: Cannot display secondary edges and projective tree at same time. Aborting.\n')
-                sys.exit()
-            extrainfo = 'secedges'
-        elif o in ("--projective",):
-            if extrainfo == 'secedges':
-                sys.stderr.write('Error: Cannot display secondary edges and projective tree at same time. Aborting.\n')
-                sys.exit()
-            extrainfo = 'projective'
-        elif o in ("-v", "--verbose"):
-            verbose = True
-        else:
-            assert False, "unhandled option"
-    return output,inputformat,linewise,verbose,extrainfo
-
 
 #config file parser
 
 COMMENT_CHAR = '#'
 OPTION_CHAR =  '='
-
-EMPTY_SVG = """<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox='0 0 16 132' width='16' height='132'>
-
-<title/>
-<defs><marker id="a" viewbox="0 0 8 4" refX="8" refY="2" markerUnits="strokeWidth"
-markerWidth="8" markerHeight="4" orient="auto">
-<path d="M 0 0 L 8 2 L 0 4 Z" fill='#800'/>
-</marker>
-</defs>
-</svg>"""
 
 def parse_config(filename):
     options = {}
@@ -149,32 +85,8 @@ def process_arguments(commandline=True):
     #get config options
     options = parse_config(os.path.join(root_directory,'config.ini'))
 
-    #get command line options
-    if commandline:
-        arg_output,arg_input,options['linewise'],verbose,options['extrainfo'] = load_arguments()
-    else:
-        arg_output = False
-        arg_input = False
-        verbose = False
-        options['linewise'] = False
-        options['extrainfo'] = 'no'
-
-    if arg_output:
-        options['outputformat'] = arg_output
-
-    if not options['outputformat'] in ["raw","preprocessed","graphical"] + outputformats:
-        sys.stderr.write("Error: Output option not recognized: " + options['outputformat'] + "\n")
-        usage()
-        sys.exit(2)
-
-    if arg_input:
-        options['inputformat'] = arg_input
-
-    if not options['inputformat'] in ["plain","tokenized","tokenized_lines","tagged","preprocessed"]:
-        sys.stderr.write("Error: Input option not recognized: " + options['inputformat'] + "\n")
-        usage()
-        sys.exit(2)
-
+    options['linewise'] = False
+    options['extrainfo'] = 'no'
     options['nbestmode'] = int(options['nbestmode'])
 
     if options['nbestmode']:
@@ -203,7 +115,7 @@ def process_arguments(commandline=True):
 
     options['taggercmd'] = shlex.split(options['taggercmd'])
 
-    options['verbose'] = verbose
+    options['verbose'] = False
     options['senderror'] = sys.stderr
 
     if options['morphology'] == 'morphisto':
@@ -314,14 +226,6 @@ class Parser():
         self.prolog_parser.sendline(parser_init)
         self.prolog_parser.expect('.*true.*')
 
-        # launch graphical conversion script
-        self.conll_to_svg = pexpect.spawn('perl',
-                                          ['-I', os.path.join(root_directory,'postprocessor','DepSVG'), os.path.join(root_directory,'postprocessor','DepSVG','conll_to_svg.perl'), '--stdout'],
-                                          cwd=os.path.join(root_directory,'postprocessor','DepSVG'),
-                                          encoding='utf-8',
-                                          echo=False)
-        self.conll_to_svg.delaybeforesend = 0
-
         self.lock_tokenize = threading.Lock()
         self.lock_tag = threading.Lock()
         self.lock_preprocess = threading.Lock()
@@ -335,7 +239,6 @@ class Parser():
         self.morph.close()
         self.prolog_preprocess.close()
         self.prolog_parser.close()
-        self.conll_to_svg.close()
 
     def main(self, text, inputformat=None, outputformat=None):
 
@@ -344,7 +247,6 @@ class Parser():
 
         if outputformat is None:
             outputformat = self.options['outputformat']
-
 
         if inputformat in ['plain', 'tokenized_lines']:
             text = text.strip()
@@ -359,21 +261,13 @@ class Parser():
         sentences = [s.strip() for s in sentences if s.strip()]
 
         if not sentences:
-            if outputformat == 'graphical':
-                return [EMPTY_SVG]
-            else:
-                return []
-
-        if outputformat == 'tokenized':
-            return sentences
+            return []
 
         if inputformat in ['plain', 'tokenized_lines', 'tokenized']:
             with self.lock_tag:
                 sentences = self.tag(sentences)
         else:
             sentences = text.split('\n\n')
-        if outputformat == 'tagged':
-            return sentences
 
         if inputformat in ['plain', 'tokenized_lines', 'tokenized', 'tagged']:
             with self.lock_preprocess:
@@ -383,28 +277,12 @@ class Parser():
             preprocessed_path.close()
             codecs.open(preprocessed_path.name, 'w', encoding='UTF-8').write(text)
 
-        if outputformat == 'preprocessed':
-            text = codecs.open(preprocessed_path, encoding='UTF-8').read()
-            os.remove(preprocessed_path)
-            return text
-
         with self.lock_parse:
             parsed_path = self.parse(preprocessed_path, outputformat)
         os.remove(preprocessed_path)
 
-        if outputformat == 'raw':
-            text = codecs.open(parsed_path, encoding='UTF-8').read()
-            os.remove(parsed_path)
-            return text
-
         sentences = self.postprocess(parsed_path, outputformat)
         os.remove(parsed_path)
-
-        if outputformat in outputformats:
-            return sentences
-
-        with self.lock_svg:
-            sentences = self.generate_graphics(sentences)
 
         return sentences
 
@@ -579,29 +457,6 @@ class Parser():
 
         return sentences
 
-
-    #use DepSVG for graphical output
-    def generate_graphics(self, sentences):
-
-        if self.options['verbose']:
-            self.options['senderror'].write("Generating SVG output\n")
-
-        out_sentences = []
-        svg = []
-
-        for sentence in sentences:
-            self.conll_to_svg.send(sentence)
-            while True:
-                line = self.conll_to_svg.readline()
-                svg.append(line.strip())
-                if line.strip() == '</svg>':
-                    out_sentences.append('\n'.join(svg))
-                    svg = []
-                    break
-                elif not line:
-                    break
-
-        return out_sentences
 
 def process_by_sentence(processor, sentences):
     sentences_out = []

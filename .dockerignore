@@ -1,11 +1,10 @@
 *
 
 !/core
-!/evaluation
-!/postprocessor/**/*
+!/models
+!/postprocessor
 !/preprocessor/**/*
 !/statistics/**/*
-!/models/*
 
 !/parzu*
 

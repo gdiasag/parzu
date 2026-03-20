@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Very simple web server for ParZu
-"""
-
 from __future__ import unicode_literals
 
 import sys
@@ -16,16 +12,18 @@ from pexpect.exceptions import TIMEOUT
 from parzu_class import Parser, process_arguments
 
 valid_inputformats = ['plain', 'tokenized', 'tokenized_lines', 'tagged']
-suggested_outputformats = ['conll', 'prolog', 'graphical']
-other_outputformats = ['tokenized', 'tagged', 'preprocessed', 'moses', 'raw']
-valid_outputformats  = suggested_outputformats + other_outputformats
+valid_outputformats = ['conll']
 
 outputformat_docstring = ""
-for outputformat in suggested_outputformats:
+for outputformat in valid_outputformats:
   outputformat_docstring += """      <li><a href="/parse?text=Ich bin ein Berliner.&format={0}">{0}</a></li>""".format(outputformat)
 
 inputformat_docstring = ""
-inputformat_docstring += """      <li><a href="/parse?text=Ich bin ein Berliner. Er ist ein Hamburger.&inputformat=plain">plain</a></li>"""
+inputformat_docstring += """
+<li>
+  <a href="/parse?text=Ich bin ein Berliner. Er ist ein Hamburger.&inputformat=plain">plain</a>
+</li>
+"""
 inputformat_docstring += """      <li><a href="/parse?text=Ich%0Abin%0Aein%0ABerliner%0A.%0A%0AEr%0Aist%0Aein%0AHamburger%0A.&inputformat=tokenized">tokenized</a> (one line per word; empty line marks end of sentence)</li>"""
 inputformat_docstring += """      <li><a href="/parse?text=Ich bin ein Berliner .%0AEr ist ein Hamburger .&inputformat=tokenized_lines">tokenized_lines</a> (one line per sentence; tokens separated by whitespace)</li>"""
 inputformat_docstring += """      <li><a href="/parse?text=Ich PPER%0Abin VAFIN%0Aein ART%0ABerliner NN%0A. $.%0A%0AEr PPER%0Aist VAFIN%0Aein ART%0AHamburger NN%0A. $.&inputformat=tagged">tagged</a> (one line per word; empty line marks end of sentence; POS-tag for each word separated by whitespace/tab)</li>"""
@@ -97,12 +95,7 @@ class Server(object):
                 self.parser = Parser(options)
                 return abort(408)
 
-            if outputformat in ['tokenized', 'tagged', 'conll', 'prolog', 'moses']:
-                result = '\n'.join(parses)
-            elif outputformat in ['preprocessed', 'raw']:
-                result = parses
-            elif outputformat == 'graphical':
-                return Response(parses[0], mimetype='image/svg+xml')
+            result = '\n'.join(parses)
 
             return Response(result, mimetype='text/plain')
 
