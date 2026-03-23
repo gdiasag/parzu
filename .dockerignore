@@ -1,15 +1,13 @@
 *
 
 !/core
-!/models
 !/postprocessor
 !/preprocessor/**/*
 !/statistics/**/*
-
 !/parzu*
 
-# Include requirements file
+# Include requirements
 !/requirements.txt
 
-# Include config file
-!/config.ini
+# Include config files
+!/docker/configs/*

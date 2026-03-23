@@ -2,12 +2,11 @@ services:
   app:
     build:
       context: .
+      dockerfile: docker/debian.Dockerfile
       args:
         - CLEVERTAGGER_SHA
         - WAPITI_SHA
-
-        - SMOR_MODEL=/app/external/zmorge-20140521-smor_newlemma.ca
-        - CRF_MODEL=/app/external/hdt_ab.zmorge-20140521-smor_newlemma.model
-        - CRF_BACKEND_EXEC=/usr/local/bin/wapiti
     ports:
       - "5003:5003"
+    volumes:
+      - ./models:/app/models

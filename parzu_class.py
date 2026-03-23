@@ -83,7 +83,7 @@ def parse_config(filename):
 def process_arguments(commandline=True):
 
     #get config options
-    options = parse_config(os.path.join(root_directory,'config.ini'))
+    options = parse_config(os.path.join(root_directory,'parzu.ini'))
 
     options['linewise'] = False
     options['extrainfo'] = 'no'
