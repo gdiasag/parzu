@@ -66,7 +66,7 @@ COPY --from=build /build/clevertagger external/clevertagger
 COPY --from=build /usr/bin/wapiti /usr/bin/wapiti
 
 COPY docker/configs/parzu.ini parzu.ini
-COPY . .
+COPY parzu/. .
 
 ENV PATH="/venv/bin:$PATH"
 
