@@ -1,5 +1,6 @@
 services:
   app:
+    read_only: true
     build:
       context: .
       dockerfile: docker/debian.Dockerfile
@@ -10,3 +11,5 @@ services:
       - "5003:5003"
     volumes:
       - ./models:/app/models
+    tmpfs:
+      - /tmp
