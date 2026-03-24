@@ -17,24 +17,27 @@ newsent = 1
 on = 1
 for line in sys.stdin:
 
-    if line == '\n':
+    if line == "\n":
         newsent = 1
 
-    if newsent and line.startswith('#0'):
+    if newsent and line.startswith("#0"):
         best = float(line.split()[-1])
-        if not best: #if all analyses have a probability of 0, discard all but the first one
+        if (
+            not best
+        ):  # if all analyses have a probability of 0, discard all but the first one
             best = 50
         newsent = 0
         on = 1
-        
-    elif newsent and line.startswith('#'):
+
+    elif newsent and line.startswith("#"):
         current = float(line.split()[-1])
         newsent = 0
-        
-        if current/best > cutoff:
+
+        if current / best > cutoff:
             on = 1
         else:
             on = 0
-            
+
     if on:
         print(line),
+
