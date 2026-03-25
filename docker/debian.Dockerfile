@@ -27,7 +27,7 @@ RUN apt-get update \
 # Setup python dependencies
 RUN python3 -m venv --without-pip /venv
 
-COPY requirements.txt .
+COPY pyproject.toml requirements.txt .
 
 RUN python3 -m pip install --no-cache-dir \
   --target="/venv/lib/python3.11/site-packages" \

@@ -1,0 +1,11 @@
+[project]
+name = "parzu"
+version = "0.1.0"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["flask", "pexpect"]
+
+[dependency-groups]
+dev = [
+  "py-spy"
+]
