@@ -52,8 +52,11 @@ def format_conversion(line):
         return word, newline
     except:
         if line == "\n":
-            return "", "w('ENDOFSENTENCE','{0}',['._{0}'],'ENDOFSENTENCE').".format(
-                sentdelim
+            return (
+                "",
+                "w('ENDOFSENTENCE','{0}',['._{0}'],'ENDOFSENTENCE').".format(
+                    sentdelim
+                ),
             )
         else:
             sys.stderr.write(
@@ -97,4 +100,3 @@ if __name__ == "__main__":
         morphology_tempfile.write(item + "\n")
 
     morphology_tempfile.close()
-

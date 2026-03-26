@@ -76,7 +76,9 @@ def feature_extract(sentbuf, outputformat):
     featurelist = []
 
     featurelist.append(get_tagging_probability(sentbuf, outputformat))
-    featurelist.append(exp(get_number_of_unattached_nodes(sentbuf, outputformat)))
+    featurelist.append(
+        exp(get_number_of_unattached_nodes(sentbuf, outputformat))
+    )
     featurelist.append(exp(get_rank(sentbuf, outputformat)))
     featurelist.append(exp(get_number_of_bad_labels(sentbuf, outputformat)))
 
@@ -156,7 +158,11 @@ def produce_output(i, sentence, outputformat):
         for j, line in enumerate(sentence):
             if j == 0:
                 continue
-            print("word({0}, {1}, {2}".format(i, j, line.split(",", 2)[-1].lstrip())),
+            print(
+                "word({0}, {1}, {2}".format(
+                    i, j, line.split(",", 2)[-1].lstrip()
+                )
+            ),
         print("")
 
     elif outputformat == "conll":

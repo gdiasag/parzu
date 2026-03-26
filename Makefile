@@ -13,6 +13,9 @@ upgrade-uv:
 venv-min:
 	$(UV_RUN) sync 
 
+venv-upgrade:
+	$(UV_RUN) sync --upgrade
+
 venv-clean:
 	rm -rf .venv
 

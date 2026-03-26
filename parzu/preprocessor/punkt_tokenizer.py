@@ -117,7 +117,9 @@ class PunktLanguageVars(object):
     """sentence internal punctuation, which indicates an abbreviation if
     preceded by a period-final token."""
 
-    re_boundary_realignment = re.compile(r'["\')\]}]+?(?:\s+|(?=--)|$)', re.MULTILINE)
+    re_boundary_realignment = re.compile(
+        r'["\')\]}]+?(?:\s+|(?=--)|$)', re.MULTILINE
+    )
     """Used to realign punctuation that should be included in a sentence
     although it follows the period (or ?, !)."""
 
@@ -466,7 +468,9 @@ class PunktBaseClass(object):
             if line.strip():
                 line_toks = iter(self._lang_vars.word_tokenize(line))
 
-                yield self._Token(next(line_toks), parastart=parastart, linestart=True)
+                yield self._Token(
+                    next(line_toks), parastart=parastart, linestart=True
+                )
                 parastart = False
 
                 for t in line_toks:
@@ -676,7 +680,12 @@ class PunktTrainer(PunktBaseClass):
                 if not is_add:
                     self._params.abbrev_types.remove(abbr)
                     if verbose:
-                        print(("  Removed abbreviation: [%6.4f] %s" % (score, abbr)))
+                        print(
+                            (
+                                "  Removed abbreviation: [%6.4f] %s"
+                                % (score, abbr)
+                            )
+                        )
 
         # Make a preliminary pass through the document, marking likely
         # sentence breaks, abbreviations, and ellipsis tokens.
@@ -970,12 +979,12 @@ class PunktTrainer(PunktBaseClass):
         p1 = float(count_b) / N
         p2 = 0.99
 
-        null_hypo = float(count_ab) * math.log(p1) + (count_a - count_ab) * math.log(
-            1.0 - p1
-        )
-        alt_hypo = float(count_ab) * math.log(p2) + (count_a - count_ab) * math.log(
-            1.0 - p2
-        )
+        null_hypo = float(count_ab) * math.log(p1) + (
+            count_a - count_ab
+        ) * math.log(1.0 - p1)
+        alt_hypo = float(count_ab) * math.log(p2) + (
+            count_a - count_ab
+        ) * math.log(1.0 - p2)
 
         likelihood = null_hypo - alt_hypo
 
@@ -997,7 +1006,9 @@ class PunktTrainer(PunktBaseClass):
         p1 = 1.0 * count_ab / count_a
         p2 = 1.0 * (count_b - count_ab) / (N - count_a)
 
-        summand1 = count_ab * math.log(p) + (count_a - count_ab) * math.log(1.0 - p)
+        summand1 = count_ab * math.log(p) + (count_a - count_ab) * math.log(
+            1.0 - p
+        )
 
         summand2 = (count_b - count_ab) * math.log(p) + (
             N - count_a - count_b + count_ab
@@ -1006,9 +1017,9 @@ class PunktTrainer(PunktBaseClass):
         if count_a == count_ab:
             summand3 = 0
         else:
-            summand3 = count_ab * math.log(p1) + (count_a - count_ab) * math.log(
-                1.0 - p1
-            )
+            summand3 = count_ab * math.log(p1) + (
+                count_a - count_ab
+            ) * math.log(1.0 - p1)
 
         if count_b == count_ab:
             summand4 = 0
@@ -1034,7 +1045,10 @@ class PunktTrainer(PunktBaseClass):
             (
                 self.INCLUDE_ALL_COLLOCS
                 or (self.INCLUDE_ABBREV_COLLOCS and aug_tok1.abbr)
-                or (aug_tok1.sentbreak and (aug_tok1.is_number or aug_tok1.is_initial))
+                or (
+                    aug_tok1.sentbreak
+                    and (aug_tok1.is_number or aug_tok1.is_initial)
+                )
             )
             and aug_tok1.is_non_punct
             and aug_tok2.is_non_punct
@@ -1058,7 +1072,9 @@ class PunktTrainer(PunktBaseClass):
             if (
                 typ1_count > 1
                 and typ2_count > 1
-                and self.MIN_COLLOC_FREQ < col_count <= min(typ1_count, typ2_count)
+                and self.MIN_COLLOC_FREQ
+                < col_count
+                <= min(typ1_count, typ2_count)
             ):
 
                 ll = self._col_log_likelihood(
@@ -1528,7 +1544,9 @@ class PunktSentenceTokenizer(PunktBaseClass):
 def demo(text, tok_cls=PunktSentenceTokenizer, train_cls=PunktTrainer):
     """Builds a punkt model and applies it to the same text"""
     cleanup = (
-        lambda s: re.compile(r"(?:\r|^\s+)", re.MULTILINE).sub("", s).replace("\n", " ")
+        lambda s: re.compile(r"(?:\r|^\s+)", re.MULTILINE)
+        .sub("", s)
+        .replace("\n", " ")
     )
     trainer = train_cls()
     trainer.INCLUDE_ALL_COLLOCS = True

@@ -1,5 +1,5 @@
 services:
-  app:
+  server:
     read_only: true
     build:
       context: .

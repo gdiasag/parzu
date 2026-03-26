@@ -70,4 +70,4 @@ COPY parzu/. .
 
 ENV PATH="/venv/bin:$PATH"
 
-CMD python3 parzu_server.py --host 0.0.0.0
+CMD python3 parzu_server.py

@@ -17,7 +17,9 @@ from subprocess import Popen, PIPE
 
 if not TREETAGGER_BIN or not TREETAGGER_MODEL:
     sys.stderr.write(
-        "ERROR: set paths TREETAGGER_BIN and TREETAGGER_MODEL in " + sys.argv[0] + "\n"
+        "ERROR: set paths TREETAGGER_BIN and TREETAGGER_MODEL in "
+        + sys.argv[0]
+        + "\n"
     )
     exit()
 
@@ -30,4 +32,3 @@ tag = Popen(
 convert_to_blank_line = Popen(["sed", r"s/^<\/s>$//"], stdin=tag.stdout)
 
 convert_to_blank_line.wait()
-

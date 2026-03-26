@@ -19,7 +19,9 @@ input_latin1 = Popen(
 gertwol = Popen(gertwolcmd, stdin=input_latin1.stdout, stdout=PIPE, stderr=PIPE)
 
 # format conversion / gertwol access
-gertwol_score = Popen(gertwolscorecmd, stdin=gertwol.stdout, stdout=PIPE, stderr=PIPE)
+gertwol_score = Popen(
+    gertwolscorecmd, stdin=gertwol.stdout, stdout=PIPE, stderr=PIPE
+)
 
 gertwol2prolog = Popen(
     ["perl", "gertwol2prolog.perl", "-nomorph"],
@@ -36,7 +38,14 @@ gertwol_utf8 = Popen(
 )
 
 gertwol2prolog2 = Popen(
-    ["swipl", "-q", "-s", "gertwol2prolog.pl", "-t", "asserta(option(var)),go."],
+    [
+        "swipl",
+        "-q",
+        "-s",
+        "gertwol2prolog.pl",
+        "-t",
+        "asserta(option(var)),go.",
+    ],
     stdin=gertwol_utf8.stdout,
     stdout=PIPE,
 )
@@ -45,4 +54,3 @@ lines = gertwol2prolog2.communicate()[0]
 
 lines = lines.replace("|: ", "")
 print(lines)
-

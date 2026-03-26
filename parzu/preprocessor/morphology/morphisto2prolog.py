@@ -354,7 +354,9 @@ def getlemma(line, word, pos):
 
     # map {CDU}-Fraktion to CDU-Fraktion
     line = re_hyphenation.sub(r"\1-", line)
-    lemma = re_any.sub("", line)  # delete all markup, leaving what we'll use as lemma
+    lemma = re_any.sub(
+        "", line
+    )  # delete all markup, leaving what we'll use as lemma
 
     # SMOR gives the same lemma to er/sie/es; keep the distinction in ParZu
     # (this is slightly redundant, since we can get the same info from the gender, but the grammar looks at the lemma to find cases of expletive 'es')
@@ -491,7 +493,11 @@ def main(instream, outstream=None):
             (
                 segments,
                 "gertwol({0},{1},{2},{3},{4}).".format(
-                    get_repr2(word), get_repr2(lemma), get_repr2(pos), morph, other
+                    get_repr2(word),
+                    get_repr2(lemma),
+                    get_repr2(pos),
+                    morph,
+                    other,
                 ),
             )
         )
