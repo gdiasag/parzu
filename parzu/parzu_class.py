@@ -13,7 +13,8 @@ import tempfile
 import threading
 import codecs
 import re
-from subprocess import Popen, PIPE
+
+from tokenizer import Tokenizer
 
 # root directory of ParZu if file is run as script
 root_directory = sys.path[0]
@@ -86,33 +87,8 @@ def process_arguments():
 class Parser:
 
     def __init__(self, options, timeout=10):
-
-        # launch punkt_tokenizer for sentence splitting
         self.punkt_tokenizer = punkt_tokenizer.PunktSentenceTokenizer()
-        self.punkt_tokenizer._params.collocations = (
-            punkt_tokenizer.punkt_data_german.collocations
-        )
-        self.punkt_tokenizer._params.ortho_context = (
-            punkt_tokenizer.punkt_data_german.ortho_context
-        )
-        self.punkt_tokenizer._params.abbrev_types = (
-            punkt_tokenizer.punkt_data_german.abbrev_types
-        )
-        self.punkt_tokenizer._params.sent_starters = (
-            punkt_tokenizer.punkt_data_german.sent_starters
-        )
-
-        # launch moses tokenizer
-        tokenizer_cmd = (
-            "perl "
-            + os.path.join(root_directory, "preprocessor", "tokenizer.perl")
-            + " -l de"
-        )
-        self.tokenizer = pexpect.spawn(
-            tokenizer_cmd, echo=False, encoding="utf-8"
-        )
-        self.tokenizer.expect("Tokenizer v3\r\nLanguage: de\r\n")
-        self.tokenizer.delaybeforesend = 0
+        self.tokenizer = Tokenizer()
 
         # launch clevertagger for POS tagging
         clevertagger_dir = os.path.dirname(options["taggercmd"][0])
@@ -192,7 +168,7 @@ class Parser:
         self.options = options
 
     def __del__(self):
-        self.tokenizer.close()
+        # self.tokenizer.close()
         self.morph.close()
         self.prolog_preprocess.close()
         self.prolog_parser.close()
@@ -240,7 +216,8 @@ class Parser:
             for sentence in sentences
         ]
 
-        sentences = process_by_sentence(self.tokenizer, sentences)
+        # sentences = process_by_sentence(self.tokenizer, sentences)
+        sentences = self.tokenizer.tokenize_sentences(sentences)
 
         return sentences
 

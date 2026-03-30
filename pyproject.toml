@@ -9,3 +9,6 @@ dependencies = ["flask", "pexpect"]
 dev = [
   "py-spy"
 ]
+
+[tool.black]
+line-length = 80
