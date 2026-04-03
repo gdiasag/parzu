@@ -1,3 +1,13 @@
 .env
 
 models/
+
+# Python slop
+__pycache__/
+*.py[co]
+
+# Virtual env
+.venv-uv/
+.venv/
+uv.lock
+.python-version

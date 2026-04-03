@@ -12,12 +12,14 @@ import codecs
 
 # python 2/3 compatibility
 if sys.version_info < (3, 0):
-  sys.stderr = codecs.getwriter('UTF-8')(sys.stderr)
-  sys.stdout = codecs.getwriter('UTF-8')(sys.stdout)
-  sys.stdin = codecs.getreader('UTF-8')(sys.stdin)
+    sys.stderr = codecs.getwriter("UTF-8")(sys.stderr)
+    sys.stdout = codecs.getwriter("UTF-8")(sys.stdout)
+    sys.stdin = codecs.getreader("UTF-8")(sys.stdin)
 
 for line in sys.stdin:
-       line = line.replace(' \u200b ', ' \xad ') #zero-width space behaves weirdly in some python versions
-       for word in line.split():
-            print(word)
-       print('')
+    line = line.replace(
+        " \u200b ", " \xad "
+    )  # zero-width space behaves weirdly in some python versions
+    for word in line.split():
+        print(word)
+    print("")

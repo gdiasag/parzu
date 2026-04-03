@@ -1,0 +1,20 @@
+[project]
+name = "parzu"
+version = "0.21.0"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi", 
+  "gunicorn", 
+  "uvicorn", 
+  "pydantic", 
+  "pexpect",
+]
+
+[dependency-groups]
+dev = [
+  "py-spy"
+]
+
+[tool.black]
+line-length = 80

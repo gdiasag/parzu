@@ -1,5 +1,5 @@
 services:
-  app:
+  server:
     read_only: true
     build:
       context: .
@@ -7,9 +7,12 @@ services:
       args:
         - CLEVERTAGGER_SHA
         - WAPITI_SHA
+    env_file:
+      - .env
     ports:
-      - "5003:5003"
+      - "5003:8000"
     volumes:
       - ./models:/app/models
     tmpfs:
+      - /root
       - /tmp

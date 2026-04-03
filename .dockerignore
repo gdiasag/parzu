@@ -6,3 +6,6 @@
 
 # Include config files
 !/docker/configs/*
+
+# Include TOML file
+!/pyproject.toml
