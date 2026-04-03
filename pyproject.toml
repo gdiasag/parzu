@@ -1,9 +1,15 @@
 [project]
 name = "parzu"
-version = "0.1.0"
+version = "0.21.0"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = ["flask", "pexpect"]
+dependencies = [
+  "fastapi", 
+  "gunicorn", 
+  "uvicorn", 
+  "pydantic", 
+  "pexpect",
+]
 
 [dependency-groups]
 dev = [

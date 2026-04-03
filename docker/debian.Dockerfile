@@ -65,9 +65,9 @@ COPY --from=build /venv /venv
 COPY --from=build /build/clevertagger external/clevertagger
 COPY --from=build /usr/bin/wapiti /usr/bin/wapiti
 
-COPY docker/configs/parzu.ini parzu.ini
-COPY parzu/. .
+COPY parzu/. /app/parzu
 
 ENV PATH="/venv/bin:$PATH"
 
-CMD python3 parzu_server.py
+CMD python3 -m gunicorn \
+  parzu.api.main:app -w 1 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000

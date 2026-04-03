@@ -8,13 +8,17 @@ from __future__ import unicode_literals
 import sys
 import os
 import shlex
+from typing import Any
 import pexpect
 import tempfile
 import threading
 import codecs
 import re
 
-from tokenizer import Tokenizer
+import asyncio
+from contextlib import asynccontextmanager
+
+from .tokenizer import Tokenizer
 
 # root directory of ParZu if file is run as script
 root_directory = sys.path[0]
@@ -36,63 +40,49 @@ COMMENT_CHAR = "#"
 OPTION_CHAR = "="
 
 
-def parse_config(filename):
-    options = {}
-    f = open(filename)
-    for line in f:
-        # First, remove comments:
-        if COMMENT_CHAR in line:
-            # split on comment char, keep only the part before
-            line, comment = line.split(COMMENT_CHAR, 1)
-        # Second, find lines with an option=value:
-        if OPTION_CHAR in line:
-            # split on option char:
-            option, value = line.split(OPTION_CHAR, 1)
-            # strip spaces:
-            option = option.strip()
-            value = value.strip()
-            # store in dictionary:
-            options[option] = value
-    f.close()
-    return options
+class ParserPool:
+    def __init__(self, config, pool_size=4):
+        self.config = config
+        self.pool_size = pool_size
+        self._pool = asyncio.Queue()
 
+    async def setup(self):
+        """Initialize N parsers in parallel at startup."""
+        print(f"Initializing pool of {self.pool_size} parsers...")
 
-# sanity checks and merging config and command line options
-def process_arguments():
+        def create_parser():
+            return Parser(self.config)
 
-    # get config options
-    options = parse_config(os.path.join(root_directory, "parzu.ini"))
+        tasks = [
+            asyncio.to_thread(create_parser) for _ in range(self.pool_size)
+        ]
+        parsers = await asyncio.gather(*tasks)
 
-    options["tempdir"] = os.path.abspath("/tmp")
+        for p in parsers:
+            self._pool.put_nowait(p)
 
-    uniquetmp = str(os.getpid())
+    @asynccontextmanager
+    async def get_parser(self):
+        parser = await self._pool.get()
+        try:
+            yield parser
+        finally:
+            self._pool.put_nowait(parser)
 
-    options["tagfilepath"] = os.path.join(
-        options["tempdir"], "tags" + uniquetmp + ".pl"
-    )
-    options["morphinpath"] = os.path.join(
-        options["tempdir"], "morphin" + uniquetmp
-    )
-    options["errorpath"] = os.path.join(options["tempdir"], "error" + uniquetmp)
-    options["morphpath"] = os.path.join(
-        options["tempdir"], "morph" + uniquetmp + ".pl"
-    )
-
-    options["taggercmd"] = shlex.split(options["taggercmd"])
-    options["senderror"] = sys.stderr
-
-    return options
+    async def parse(self, text: str):
+        async with self.get_parser() as parser:
+            result = await asyncio.to_thread(parser.main, text)
+            return result
 
 
 class Parser:
-
-    def __init__(self, options, timeout=10):
+    def __init__(self, config, timeout=60):
+        self.config = config
         self.punkt_tokenizer = punkt_tokenizer.PunktSentenceTokenizer()
         self.tokenizer = Tokenizer()
 
         # launch clevertagger for POS tagging
-        clevertagger_dir = os.path.dirname(options["taggercmd"][0])
-        sys.path.append(clevertagger_dir)
+        sys.path.append(config.tagger_dir)
         import clevertagger
 
         self.tagger = clevertagger.Clevertagger()
@@ -100,7 +90,7 @@ class Parser:
         # launch SMOR morphological analyzer
         self.morph = pexpect.spawn(
             "fst-infl2",
-            ["-q", options["smor_model"]],
+            ["-q", config.smor_model],
             echo=False,
             encoding="utf-8",
         )
@@ -164,8 +154,6 @@ class Parser:
         self.lock_preprocess = threading.Lock()
         self.lock_parse = threading.Lock()
         self.lock_svg = threading.Lock()
-
-        self.options = options
 
     def __del__(self):
         # self.tokenizer.close()
@@ -284,7 +272,7 @@ class Parser:
         # communication with swipl scripts is via temporary files
         morphfile = tempfile.NamedTemporaryFile(
             prefix="ParZu-morph.pl",
-            dir=os.path.join(self.options["tempdir"]),
+            dir=os.path.join(self.config.tmp_dir),
             delete=False,
         )
         morphfile.close()
@@ -294,7 +282,7 @@ class Parser:
 
         tagfile = tempfile.NamedTemporaryFile(
             prefix="ParZu-tag.pl",
-            dir=os.path.join(self.options["tempdir"]),
+            dir=os.path.join(self.config.tmp_dir),
             delete=False,
         )
         tagfile.close()
@@ -304,7 +292,7 @@ class Parser:
 
         preprocessedfile = tempfile.NamedTemporaryFile(
             prefix="ParZu-preprocessed.pl",
-            dir=os.path.join(self.options["tempdir"]),
+            dir=os.path.join(self.config.tmp_dir),
             delete=False,
         )
         preprocessedfile.close()
@@ -339,7 +327,7 @@ class Parser:
     def parse(self, inpath, outputformat):
         parsedfile = tempfile.NamedTemporaryFile(
             prefix="ParZu-parsed.pl",
-            dir=os.path.join(self.options["tempdir"]),
+            dir=os.path.join(self.config.tmp_dir),
             delete=False,
         )
         parsedfile.close()
@@ -380,19 +368,3 @@ class Parser:
             sentences = list(cleanup_output.cleanup_conll(infile))
 
         return sentences
-
-
-def process_by_sentence(processor, sentences):
-    sentences_out = []
-    for sentence in sentences:
-        words = []
-        processor.send(sentence + "\n")
-        while True:
-            word = processor.readline().strip()
-            if word:
-                words.append(word)
-            else:
-                break
-        sentences_out.append("\n".join(words))
-
-    return sentences_out
